@@ -47,11 +47,6 @@ let interval = 60.0 as TimeInterval
 
 let evenLater = later + interval // 11 mins in total
 
-/*:
- # DateComponents
- - DateComponents has a very long initializer, but everything has a default value so can be omitted.
- */
-
 /*
  let dateComponents = DateComponents(calendar: nil,
  timeZone: nil,
@@ -124,7 +119,7 @@ guard let dateFromComponents = calendar.date(from: finalDay) else { fatalError()
 
 //: Converting from DateComponents to Date using Calendar
 
-var finalDay2 = DateComponents(year: 2017, month: 12, day: 22, hour: 18)
+var finalDay2 = DateComponents(year: 2017, month: 2, day: 31, hour: 18)
 let greg = Calendar(identifier: .gregorian)
 
 // returns nil if no valid date can be found
@@ -173,6 +168,7 @@ let dayComponents = DateComponents(day:1)
 guard let tomorrowDate = Calendar.current.date(byAdding: dayComponents, to: Date()) else { fatalError() }
 
 let tomorrow = Calendar.current.compare(Date(), to: tomorrowDate , toGranularity: .day)
+
 if tomorrow == ComparisonResult.orderedSame {
   print(#line, "if today and tomorrow are the same in terms of 1 day granularity.")
 } else if tomorrow == ComparisonResult.orderedAscending {
@@ -219,7 +215,7 @@ formatter1.string(from: Date())
 //: Convenient way to create localized date strings (user facing).
 
 DateFormatter.localizedString(from: Date(), dateStyle: .full, timeStyle: .none)
-DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
+DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .full)
 
 //: Localized way of creating DateFormatter with full control
 
@@ -239,9 +235,9 @@ guard let newDate3 = formatter3.date(from: randomDateString) else {
 DateFormatter.localizedString(from: newDate3, dateStyle: .short, timeStyle: .none) // uses US Locale which is default on my system
 
 /*:
- # DateInterval
+ # (NS)DateInterval
  * iOS 10+ Adds DateInterval.
- * DateInterval is a Swift only Struct that represents a  positive time/date span or 0 (negatives are not supported).
+ * DateInterval represents a  positive time/date span or 0 (negatives are not supported).
  */
 
 let dateInterval = DateInterval(start: Date(), duration: 60*60*24)
@@ -259,7 +255,7 @@ dateInterval.duration
 86400/24/60/60
 
 /*:
- # DateIntervalFormatter
+ # (NS)DateIntervalFormatter
  - "A formatter that creates string representations of time intervals."
  - For user readable date interval representations.
  */
@@ -275,9 +271,6 @@ intervalFormatter.string(from: dateInterval)
 // Questions
 
 //1. Get the start of the day 1 month from today
-let components6 = DateComponents(month: 1)
-let newDate6 = Calendar.current.date(byAdding: components6, to: Date())
-Calendar.current.startOfDay(for: newDate6!)
 
 //2. Check to see if 3 days ago fell on a weekend
 
