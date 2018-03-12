@@ -1,7 +1,9 @@
-import UIKit
+import Foundation
 
 /*:
  # Overview of Date Programming on the platform
+ - Are dates M, V or C?
+ - Date programming is part of `Foundation`.
  - Involves a number of classes including `(NS)Date`, `(NS)DateComponents`, `(NS)Calendar`, `(NS)DateFormatter`.
  - `(NS)Date` allows you to represent an absolute point in time.
  - `(NS)Calendar` can represent a particular calendar. For instance, the Gregorian or Hebrew Calendar.
@@ -79,21 +81,21 @@ let twelveMinsLater = Date().addingTimeInterval(60 * 11)
  ✅  Create the date for next week at the same time as now using Date.
  */
 
-let oneWeekLaterInterval: TimeInterval = 7 * 24 * 60 * 60
-let oneWeekLater = now + oneWeekLaterInterval
+
 
 /*:
  ---
  # (NS)DateComponents
  - Think URLComponents.
- - A date/time specified in terms of date/time units.
+ - A date/time specified in terms of units.
  - Units are things like year, month, day, hour, and minute, etc.
- - These units are evaluated by a calendar and time zone.
- - Can be used to specify a particular date/time according to the components. eg. 2nd month, 1st day. => 01 Feb
+ - These units are must be evaluated relative to a specifi calendar and time zone.
+ - Can be used to specify a particular date/time. eg. 2nd month, 1st day. => 01 Feb
  - Can also be used to specify a time duration: eg. 5 hours, 4 minutes, 3 seconds.
  */
 
 //: DateComponents Swift Initializer
+
 /*
  let dateComponents = DateComponents(
  calendar: nil,
@@ -119,16 +121,10 @@ let oneWeekLater = now + oneWeekLaterInterval
 ✅ Using the DateComponents Initializer create 01 Feb.
 */
 
-let febOne = DateComponents(calendar: .current, timeZone: .current, month: 2, day: 1)
 
-febOne.date
-  
-/*
+/*:
 ✅ Using the DateComponents Initializer create the time duration 5 hours, 4 minutes, 3 seconds
 */
-
-let fivehoursFourMinsThreeSecs = DateComponents(calendar: .current, timeZone: .current, hour: 5, minute: 4, second: 3)
-print(#line, fivehoursFourMinsThreeSecs.hour ?? "No date")
 
 
 //: Use the initializer and/or its properties
@@ -167,9 +163,29 @@ bumDate.isValidDate(in: .current)
 
 
 /*:
- ✅  Using `DateComponents` create a date for the last day, make sure it's a legitimate date.
+ ✅  Using `DateComponents` create a date for the last day of LHL; make sure it's a legitimate date.
  */
 
+
+/*:
+ ✅  Using `DateComponents` get today's week for the year.
+ */
+
+
+
+/*:
+ - You can create dates that don't specify things like year. For instance, if you want to store someone's birthday. This will default to the year 1 CE (not guaranteed).
+ */
+
+var bDay = DateComponents()
+bDay.month = 5
+bDay.day = 2
+
+let bDate = Calendar.current.date(from: bDay)
+
+/*:
+ - We can go ahead and store this as an Date, but when we go to use it we will need to set the year. This is the `(NS)Calendar`'s job. Let's look at the Calendar next.
+ */
 
 /*:
  ---
@@ -192,7 +208,7 @@ calendar = Calendar.autoupdatingCurrent
 var finalDay2 = DateComponents(year: 2017, month: 2, day: 31, hour: 18)
 let greg = Calendar(identifier: .gregorian)
 
-// returns nil if no valid date can be found
+// Returns an optional, nil if no valid date can be found
 guard var dateFromComponents = greg.date(from: finalDay2) else { fatalError() }
 
 dateFromComponents
@@ -209,22 +225,21 @@ Calendar.current.component(.second, from: twentyMinsLater)
 
 
 //:  Adding dates using Calendar.
-//: (This is the correct way to add dates. Why should you avoid creating dates by adding TimeIntervals to Date?)
+//: This is the correct way to compute dates that need to be Calendar aware.
 
 
 let calendar2 = Calendar.current
 let components2 = DateComponents(day: 1, hour: 1)
 guard let date3 = calendar2.date(byAdding: components2, to: Date()) else {
-  // will fail if this is not an actual date
   fatalError()
 }
 
 date3
 
-//: Finding the next occurrence of a date.
+//: Finding the next occurrence of a date
 
 let components3 = DateComponents(weekday: 2) // Monday
-guard let nextMonday = greg.nextDate(after: Date(), matching: components3, matchingPolicy: .nextTime) else {
+guard let nextMonday = calendar2.nextDate(after: Date(), matching: components3, matchingPolicy: .nextTime) else {
   fatalError()
 }
 
@@ -236,7 +251,7 @@ guard let nextWeekend = greg.nextWeekend(startingAfter: Date()) else { fatalErro
 print(#line, nextWeekend)
 
 /*:
- #### Comparing dates using Calendar and DateComponents
+ ### Comparing dates using Calendar and DateComponents
 */
 
 let dayComponents = DateComponents(day:1)
@@ -244,12 +259,12 @@ guard let tomorrowDate = Calendar.current.date(byAdding: dayComponents, to: Date
 
 let tomorrow2 = Calendar.current.compare(Date(), to: tomorrowDate , toGranularity: .day)
 
-if tomorrow2 == ComparisonResult.orderedSame {
-  print(#line, "if today and tomorrow are the same in terms of 1 day granularity.")
-} else if tomorrow2 == ComparisonResult.orderedAscending {
-  print(#line, "tomorrow is 1 day later than today, which it is.")
-} else if tomorrow2 == ComparisonResult.orderedDescending {
-  print(#line, "fires if tomorrow is earlier by 1 day than today, which it is not.")
+if tomorrow2 == .orderedSame {
+  print(#line, "today and tomorrow don't differ by 1 day")
+} else if tomorrow2 == .orderedAscending {
+  print(#line, "tomorrow is 1 day later than today.")
+} else if tomorrow2 == .orderedDescending {
+  print(#line, "tomorrow is earlier by 1 day than today.")
 }
 
 //: Simple Date Comparison
@@ -265,17 +280,26 @@ var startOfDay = Calendar.current.startOfDay(for: todayPlus2Hours)
 startOfDay -= 1 // subtract a second from day's beginning
 
 
-//: Useful Date Comparisons
-
+//: Useful Date Comparisons new in iOS 8
+Calendar.current.isDate(Date(), inSameDayAs: tomorrow)
 Calendar.current.isDateInToday(Date())
 Calendar.current.isDateInWeekend(Date())
 Calendar.current.isDateInTomorrow(Date())
 Calendar.current.isDateInYesterday(Date())
 
 /*:
+ ✅ Above I saved my birthdate as `bDay` which is just the month and day I am born. The year defaults to 1 CE. If I wanted to take this stored date and use it to set a reminder this year, convert the date using the Calendar object to specify this year. (Hint: Use the Calendar documentation
+ */
+
+/*:
+ ✅ Add 10 hours and 20 minutes to right now and test to see if that new time falls on tomorrow.
+ */
+
+
+/*:
  ---
  # Date Formatting
- * (NS)DateFormatter is used to convert to and from a string representation of a date.
+ - (NS)DateFormatter is used to convert to and from a string representation of a date.
  */
 
 var formatter1 = DateFormatter()
@@ -286,7 +310,7 @@ formatter1.string(from: Date())
 //: This is called a "Fixed Format Date" using the ISO 8601 standard. When would you want to use this and when would you not want to use this?
 
 
-//: iOS 10+ uses ISO8601DateFormatter for Fixed Formats. See the documentation.
+//: iOS 10+ uses ISO8601DateFormatter for Fixed Formats which uses [ISO 8601 Standard](http://www.iso.org/iso/home/standards/iso8601). See the documentation for details.
 
 //: Convenient way to create localized date strings (user facing).
 
@@ -299,7 +323,7 @@ var formatter2 = DateFormatter()
 formatter2.setLocalizedDateFormatFromTemplate("yyyy-MM-dd HH:mm:ss")
 formatter2.string(from: Date())
 
-//: Converting String dates to Date using template (Used for network requests).
+//: Converting String dates to Date using template (Can be used for handling dates you get from network requests).
 
 let formatter3 = DateFormatter()
 formatter3.dateFormat = "yyyy-MM-dd"
@@ -311,13 +335,16 @@ guard let newDate3 = formatter3.date(from: randomDateString) else {
 DateFormatter.localizedString(from: newDate3, dateStyle: .short, timeStyle: .none) // uses US Locale which is default on my system
 
 /*:
- # (NS)DateInterval
- * iOS 10+ Adds DateInterval.
- * DateInterval represents a  positive time/date span or 0 (negatives are not supported).
+ ---
+ ## (NS)DateInterval
+ - iOS 10+ Adds DateInterval.
+ - DateInterval represents a  positive time/date span or 0 (negatives are not supported).
  */
 
 let dateInterval = DateInterval(start: Date(), duration: 60*60*24)
 dateInterval.contains(Date())
+
+// Adding 1 second
 let endDatePlus1 = Date(timeInterval: 1, since: dateInterval.end)
 dateInterval.contains(endDatePlus1)
 
@@ -331,7 +358,8 @@ dateInterval.duration
 86400/24/60/60
 
 /*:
- # (NS)DateIntervalFormatter
+ ---
+ ## (NS)DateIntervalFormatter
  - "A formatter that creates string representations of time intervals."
  - For user readable date interval representations.
  */
@@ -344,17 +372,24 @@ intervalFormatter.string(from: dateInterval)
 intervalFormatter.dateTemplate = "MMMM-dd-YYYY"
 intervalFormatter.string(from: dateInterval)
 
-// Questions
+/*:
+ ---
+ ## Questions
+*/
 
 //1. Get the start of the day 1 month from today
 
 //2. Check to see if 3 days ago fell on a weekend
 
+
 //3. Get end of the day 5 days from today
+
 
 //4. Using DateComponents get the Date/Time that is 1 week earlier and the very last second of the day.
 
+
 /*:
+ ---
  ## References
  * [Date and Time Programming Guide](https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/DatesAndTimes/DatesAndTimes.html)
  * [Date Formatting Guide](https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/DataFormatting/DataFormatting.html#//apple_ref/doc/uid/10000029i)
