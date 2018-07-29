@@ -36,24 +36,29 @@ now.timeIntervalSince1970
 let tenMinsLater = Date(timeIntervalSinceNow: 60 * 10)
 tenMinsLater.timeIntervalSinceReferenceDate
 
-let twentyFourHours: TimeInterval = 60 * 60 * 24
-let tomorrow = Date(timeInterval: twentyFourHours, since: Date())
+let twentyFourHoursInSeconds: TimeInterval = 60 * 60 * 24
+let tomorrow = Date(timeInterval: twentyFourHoursInSeconds, since: Date())
 tomorrow.timeIntervalSinceReferenceDate
 
-let yesterday = Date(timeInterval: -twentyFourHours, since: Date())
+let yesterday = Date(timeInterval: -twentyFourHoursInSeconds, since: Date())
 yesterday.timeIntervalSinceReferenceDate
 
 // Normal comparison operators are available in Swift (not Objc)
 
 if tenMinsLater > now {
-  print(#line, "Dates can be compared!")
+  print(#line, "Dates can be compared normally in Swift!")
 }
 
 // In Objc use `compare` because NSDate is an object 🙁
+// Do it like this in Objc:
 
 let comparisonResult = Date().compare(Date())
 if comparisonResult == .orderedSame {
-  print(#line, "they are the same!")
+  print(#line, "they are the same dates")
+} else if comparisonResult == .orderedAscending {
+  print(#line, "the receiver is earlier")
+} else if comparisonResult == .orderedDescending {
+  print(#line, "the receiver is later")
 }
 
 /*:
@@ -71,15 +76,15 @@ yesterday.timeIntervalSinceNow //  / 60 / 60
 
 //: TimeInterval is just a TypeAlias to Double to represents seconds and fractional seconds.
 
-let interval = 60.0 as TimeInterval
+let sixtySeconds = 60.0 as TimeInterval
 
 //: Add time intervals to Date (Swift only)
 
-let elevenMinsLater = tenMinsLater + interval // Adds Date and TimeInterval together -- 11 mins in total
+let elevenMinsLater = tenMinsLater + sixtySeconds // Adds Date and TimeInterval together -- 11 mins in total
 
 // Or Swift & ObjC
 
-let twelveMinsLater = Date().addingTimeInterval(interval * 11)
+let twelveMinsLater = Date().addingTimeInterval(sixtySeconds * 11)
 
 /*:
  ✅  Create the date for next week at the same time as now using Date.
@@ -100,24 +105,7 @@ let twelveMinsLater = Date().addingTimeInterval(interval * 11)
 //: DateComponents Swift Initializer
 
 /*
- let dateComponents = DateComponents(
- calendar: nil,
- timeZone: nil,
- era: nil,
- year: nil,
- month: nil,
- day: nil,
- hour: nil,
- minute: nil,
- second: nil,
- nanosecond: nil,
- weekday: nil,
- weekdayOrdinal: nil,
- quarter: nil,
- weekOfMonth: nil,
- weekOfYear: nil,
- yearForWeekOfYear: nil
- )
+init(calendar: Calendar? = default, timeZone: TimeZone? = default, era: Int? = default, year: Int? = default, month: Int? = default, day: Int? = default, hour: Int? = default, minute: Int? = default, second: Int? = default, nanosecond: Int? = default, weekday: Int? = default, weekdayOrdinal: Int? = default, quarter: Int? = default, weekOfMonth: Int? = default, weekOfYear: Int? = default, yearForWeekOfYear: Int? = default)
  */
 
 /*:
@@ -129,17 +117,16 @@ let twelveMinsLater = Date().addingTimeInterval(interval * 11)
  ✅ Using the DateComponents Initializer create the time duration 5 hours, 4 minutes, 3 seconds
  */
 
-
 //: Use the initializer and/or its properties
 
 var dateFromProperties = DateComponents()
 dateFromProperties.hour = 2
 dateFromProperties.minute = 10
-// dateFromProperties.calendar = .current
+//dateFromProperties.calendar = .current
 
 //: Getting the Date from components
-if let _ = dateFromProperties.date {
-  print(#line, "with a calendar it can be converted to a date")
+if let dateFromProperties = dateFromProperties.date {
+  print(#line, "with a calendar it can be converted to a date", dateFromProperties)
 } else {
   print(#line, "without a calendar it can't convert to a date")
 }
@@ -161,7 +148,7 @@ var bumDate = DateComponents()
 bumDate.day = 31
 bumDate.month = 2
 
-// check for a valid date
+// check for a valid date relative to a calendar
 bumDate.isValidDate(in: .current)
 
 
@@ -180,6 +167,8 @@ bumDate.isValidDate(in: .current)
 var birthDate = DateComponents()
 birthDate.month = 7
 birthDate.day = 2
+
+// Use Calendar's method: date(from components: DateComponents) -> Date?
 
 let bDate = Calendar.current.date(from: birthDate)
 
@@ -253,8 +242,8 @@ nextMonday
  ### Comparing dates using Calendar and DateComponents
  */
 
-let dayComponents = DateComponents(day:1)
-guard let tomorrowDate = Calendar.current.date(byAdding: dayComponents, to: Date()) else { fatalError() }
+let dayComponent = DateComponents(day: 1)
+guard let tomorrowDate = Calendar.current.date(byAdding: dayComponent, to: Date()) else { fatalError() }
 
 let tomorrow2 = Calendar.current.compare(Date(), to: tomorrowDate , toGranularity: .day)
 
@@ -288,9 +277,9 @@ Calendar.current.isDateInToday(Date())
 
 Calendar.current.isDateInWeekend(Date())
 
-Calendar.current.isDateInTomorrow(Date())
+Calendar.current.isDateInTomorrow(tomorrow)
 
-Calendar.current.isDateInYesterday(Date())
+Calendar.current.isDateInYesterday(Calendar.current.startOfDay(for: Date())-1)
 
 /*:
  ✅ Above I saved my birthdate components as `birthDate` which is just the month and day. The year defaults to 1 CE. Help me set a reminder this year for that date using Calendar. Look at Calendar's documentation.
@@ -320,8 +309,9 @@ formatter1.string(from: Date())
 //: iOS 10+ uses ISO8601DateFormatter for Fixed Formats which uses [ISO 8601 Standard](http://www.iso.org/iso/home/standards/iso8601). See the documentation for details.
 
 //: Convenient way to create localized date strings (user facing).
+// .full, .long, .medium, .short, .none
 
-DateFormatter.localizedString(from: Date(), dateStyle: .full, timeStyle: .none)
+DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .none)
 
 DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .full)
 
@@ -340,7 +330,7 @@ guard let newDate3 = formatter3.date(from: randomDateString) else {
   fatalError()
 }
 
-newDate3
+newDate3 // Date
 
 DateFormatter.localizedString(from: newDate3, dateStyle: .short, timeStyle: .none) // uses US Locale which is default on my system
 
@@ -351,21 +341,25 @@ DateFormatter.localizedString(from: newDate3, dateStyle: .short, timeStyle: .non
  - DateInterval represents a positive time/date span (range) or 0 (negatives are not supported).
  */
 
-let dateInterval = DateInterval(start: Date(), duration: 60*60*24)
-dateInterval.contains(Date())
+let nextDayDateInterval = DateInterval(start: Date(), duration: twentyFourHoursInSeconds)
+
+// check if a date falls within the interval
+nextDayDateInterval.contains(Date())
 
 // Adding 1 second
-let endDatePlus1 = Date(timeInterval: 1, since: dateInterval.end)
-dateInterval.contains(endDatePlus1)
+let oneSecondPastNextDayDateInterval = Date(timeInterval: 1, since: nextDayDateInterval.end)
+nextDayDateInterval.contains(oneSecondPastNextDayDateInterval)
 
 //: Comparing DateInterval
 
-dateInterval < DateInterval(start: Date(), end: endDatePlus1)
-dateInterval > DateInterval(start: Date(), end: endDatePlus1)
-dateInterval == DateInterval(start: Date(), end: endDatePlus1)
+nextDayDateInterval < DateInterval(start: Date(), end: oneSecondPastNextDayDateInterval)
+nextDayDateInterval > DateInterval(start: Date(), end: oneSecondPastNextDayDateInterval)
+nextDayDateInterval == DateInterval(start: Date(), end: oneSecondPastNextDayDateInterval)
 
-dateInterval.duration
-86400/24/60/60
+nextDayDateInterval.duration
+86400/24/60/60  // One day duration
+
+nextDayDateInterval.intersects(DateInterval(start: Date(), duration: twentyFourHoursInSeconds + 1))
 
 /*:
  ---
@@ -377,10 +371,10 @@ dateInterval.duration
 let intervalFormatter = DateIntervalFormatter()
 intervalFormatter.dateStyle = .medium
 intervalFormatter.timeStyle = .short
-intervalFormatter.string(from: dateInterval)
+intervalFormatter.string(from: nextDayDateInterval)
 
 intervalFormatter.dateTemplate = "MMMM-dd-YYYY"
-intervalFormatter.string(from: dateInterval)
+intervalFormatter.string(from: nextDayDateInterval)
 
 /*:
  ---
@@ -466,7 +460,6 @@ let kilowattHours = calories.converted(to: .kilowattHours)
 
 let kmHome = Measurement(value: 20, unit: UnitLength.kilometers)
 let milesToWork = Measurement(value: 5, unit: UnitLength.miles)
-
 let totalDistance = kmHome + milesToWork
 
 //: totalDistance is converted to base unit meters.
