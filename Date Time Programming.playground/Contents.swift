@@ -3,13 +3,15 @@ import Foundation
 /*:
  # Overview of Date Programming on the platform
  - Are dates M, V or C?
+ - Date/time programming is fundamental.
+ - Why are dates/times hard?
  - Date programming is part of `Foundation`.
  - Involves a number of classes including `(NS)Date`, `(NS)DateComponents`, `(NS)Calendar`, `(NS)DateFormatter`.
  - `(NS)Date` allows you to represent an absolute point in time.
  - `(NS)Calendar` can represent a particular calendar. For instance, the Gregorian or Hebrew Calendar.
- - Use `(NS)Calendar` for most date calculations.
- - `(NS)Calendar` allows you to convert from `(NS)Date` to `(NS)DateComponents`.
- - `(NS)DateComponents` allows you to repesent the components of a particular date, such as the day, month, hour, etc relative to a Calendar.
+ - 🎗 Use `(NS)Calendar` for most date calculations.
+ - `(NS)DateComponents` allows you to repesent the components of a particular date, such as the day, month, hour, etc. *relative* to a particular type of Calendar.
+ - `(NS)Calendar` allows you to convert from `(NS)Date` to `(NS)DateComponents` since DateComponents are relative to a particular calendar type.
  - `(NS)TimeZone` allows our date/time computations to be time zone aware.
  */
 
@@ -19,11 +21,12 @@ import Foundation
  # `(NS)Date`
  - A specific point in time, independent of any specific calendar or time zone.
  - Good for storing or transmitting over a wire. Why?
- - `(NS)Date` provides methods for creating dates, comparing dates, and computing intervals independent of calendars and time zones.
- - `(NS)Date` computes time as seconds relative to an absolute reference time: the first instant of January 1, 2001, Greenwich Mean Time (GMT).
- - Dates before the reference date are stored as negative numbers; dates after are stored as positive numbers.
- - The sole primitive method of NSDate, `timeIntervalSinceReferenceDate` provides the basis for all the other methods in the NSDate interface.
- - `NSDate` converts all date and time representations to and from `NSTimeInterval` values that are relative to the absolute reference date.
+ - `(NS)Date` provides methods for creating dates, comparing dates, and computing intervals with other Dates that are independent of calendars and time zones.
+ - `(NS)Date` computes time as a floating point integer relative to an absolute reference time: the first instant of January 1, 2001, Greenwich Mean Time (GMT).
+ - Dates before the reference date are stored as negative floats; dates after, are stored as positive floats.
+ - 🎗 The sole primitive method of NSDate, `timeIntervalSinceReferenceDate` provides the basis for all the other methods in the NSDate interface.
+ - `NSDate` converts all date and time representations to and from `(NS)TimeInterval` values that are relative to the absolute reference date.
+ - `(NS)TimeInterval` is just a typedef to double.
  */
 
 let now = Date()
@@ -37,13 +40,17 @@ let tenMinsLater = Date(timeIntervalSinceNow: 60 * 10)
 tenMinsLater.timeIntervalSinceReferenceDate
 
 let twentyFourHoursInSeconds: TimeInterval = 60 * 60 * 24
+
+// init(timeInterval: TimeInterval, since date: Date)
+// Returns a Date initialized relative to another given date by a given number of seconds.
+
 let tomorrow = Date(timeInterval: twentyFourHoursInSeconds, since: Date())
 tomorrow.timeIntervalSinceReferenceDate
 
 let yesterday = Date(timeInterval: -twentyFourHoursInSeconds, since: Date())
 yesterday.timeIntervalSinceReferenceDate
 
-// Normal comparison operators are available in Swift (not Objc)
+// Normal comparison operators are available in Swift 😎 (not Objc ❌)
 
 if tenMinsLater > now {
   print(#line, "Dates can be compared normally in Swift!")
@@ -53,11 +60,13 @@ if tenMinsLater > now {
 // Do it like this in Objc:
 
 let comparisonResult = Date().compare(Date())
-if comparisonResult == .orderedSame {
+
+switch comparisonResult {
+case .orderedSame:
   print(#line, "they are the same dates")
-} else if comparisonResult == .orderedAscending {
+case .orderedAscending:
   print(#line, "the receiver is earlier")
-} else if comparisonResult == .orderedDescending {
+case .orderedDescending:
   print(#line, "the receiver is later")
 }
 
@@ -67,22 +76,24 @@ if comparisonResult == .orderedSame {
  ```
  */
 
-//: timeIntervalSinceNow gives you the interval between some date and now, negative for the future.
+//: `timeIntervalSinceNow` is a computed property whose receiver is a `Date` instance. It returns the interval between the receiver's date and now, negative for the future.
 
 // Why is this not 600?
 
 tenMinsLater.timeIntervalSinceNow
+-tenMinsLater.timeIntervalSinceNow
+
 yesterday.timeIntervalSinceNow //  / 60 / 60
 
 //: TimeInterval is just a TypeAlias to Double to represents seconds and fractional seconds.
 
 let sixtySeconds = 60.0 as TimeInterval
 
-//: Add time intervals to Date (Swift only)
+//: Add time intervals to Date using the `+` operator (Swift only)
 
-let elevenMinsLater = tenMinsLater + sixtySeconds // Adds Date and TimeInterval together -- 11 mins in total
+let elevenMinsLater = tenMinsLater + sixtySeconds // Adds Date and TimeInterval together -- 11 mins in total (☠️ order matters!)
 
-// Or Swift & ObjC
+// Or Swift & ObjC use `func addingTimeInterval(_ timeInterval: TimeInterval) -> Date`
 
 let twelveMinsLater = Date().addingTimeInterval(sixtySeconds * 11)
 
@@ -90,19 +101,18 @@ let twelveMinsLater = Date().addingTimeInterval(sixtySeconds * 11)
  ✅  Create the date for next week at the same time as now using Date.
  */
 
-
 /*:
  ---
  # `(NS)DateComponents`
  - 🎗 Think URLComponents.
- - A date/time specified in terms of units.
- - Units are things like year, month, day, hour, and minute, etc.
+ - A date/time specified in terms of human understandable units.
+ - Units are things like year, month, day, hour, minute, etc.
  - These units must be evaluated relative to a specific calendar and time zone.
  - Can be used to specify a particular date/time. eg. 2nd month, 1st day. => 01 Feb
  - Can also be used to specify a time duration: eg. 5 hours, 4 minutes, 3 seconds.
  */
 
-//: DateComponents Swift Initializer
+//: DateComponents Swift Initializer!
 
 /*
 init(calendar: Calendar? = default, timeZone: TimeZone? = default, era: Int? = default, year: Int? = default, month: Int? = default, day: Int? = default, hour: Int? = default, minute: Int? = default, second: Int? = default, nanosecond: Int? = default, weekday: Int? = default, weekdayOrdinal: Int? = default, quarter: Int? = default, weekOfMonth: Int? = default, weekOfYear: Int? = default, yearForWeekOfYear: Int? = default)
@@ -112,19 +122,22 @@ init(calendar: Calendar? = default, timeZone: TimeZone? = default, era: Int? = d
  ✅ Using the DateComponents Initializer create 01 Feb.
  */
 
-
 /*:
  ✅ Using the DateComponents Initializer create the time duration 5 hours, 4 minutes, 3 seconds
  */
+
 
 //: Use the initializer and/or its properties
 
 var dateFromProperties = DateComponents()
 dateFromProperties.hour = 2
 dateFromProperties.minute = 10
-//dateFromProperties.calendar = .current
+// dateFromProperties.calendar = .current
+
+dateFromProperties.isValidDate
 
 //: Getting the Date from components
+
 if let dateFromProperties = dateFromProperties.date {
   print(#line, "with a calendar it can be converted to a date", dateFromProperties)
 } else {
@@ -133,6 +146,7 @@ if let dateFromProperties = dateFromProperties.date {
 
 
 //: Getting the components
+
 if let month = dateFromProperties.month {
   print(#line, "month is \(month)")
 } else {
@@ -144,45 +158,45 @@ if let month = dateFromProperties.month {
  - ☠️ The system doesn't prevent you from setting nonsensical date component values.
  */
 
-var bumDate = DateComponents()
-bumDate.day = 31
-bumDate.month = 2
+var feb31 = DateComponents()
+feb31.day = 31
+feb31.month = 2
 
 // check for a valid date relative to a calendar
-bumDate.isValidDate(in: .current)
+feb31.isValidDate(in: .current)
 
 
 /*:
- ✅  Using `DateComponents` create a date for the last day of LHL; make sure it's a legitimate date.
+ ✅  Using `DateComponents` create a date for the last day of LHL; make sure it's a valid date.
  */
 
 
 
 /*:
  - You can create dates that don't specify things like year.
- - This might be useful for storing someone's birth date.
+ - This might be useful for doing things like storing someone's birth date!
  - Defaults to the year 1 CE (not guaranteed).
  */
 
-var birthDate = DateComponents()
-birthDate.month = 7
-birthDate.day = 2
+var july2 = DateComponents()
+july2.month = 7
+july2.day = 2
 
-// Use Calendar's method: date(from components: DateComponents) -> Date?
+// Use Calendar's method: `date(from components: DateComponents) -> Date?` to get a date from a Calendar
 
-let bDate = Calendar.current.date(from: birthDate)
+let bDate = Calendar.current.date(from: july2)
 
 /*:
- - We can go ahead and store this as an Date, but when we go to use it we will need to set the year.
- - This is the `(NS)Calendar`'s job.
- - Let's look at the Calendar next.
+ - We can go ahead and store this as a Date, but when we go to use it we will want to set the year.
+ - This is `(NS)Calendar`'s job.
+ - Let's look at the `Calendar` next.
  */
 
 /*:
  ---
  # `(NS)Calendar`
  - Date is independent of specific Calendars.
- - The main Calendar in use internationally is the Gregorian calendar, but there are others.
+ - The main Calendar in use internationally is the Gregorian Calendar, but there are others.
  - You should write date/time code independently of a specific Calendar if you intend your app to be used outside the Americas and Europe.
  - Use `(NS)Calendar` to convert between absolute date/time and date/time components, like year, day, minutes, etc.
  */
@@ -210,6 +224,7 @@ dateFromComponents
 let twentyMins = DateComponents(minute: 20)
 
 guard let twentyMinsLater = greg.date(byAdding: twentyMins, to: dateFromComponents) else { fatalError() }
+
 twentyMinsLater
 
 // Getting a date component from a time using `(NS)Calendar`
@@ -217,7 +232,7 @@ twentyMinsLater
 greg.component(.month, from: twentyMinsLater)
 
 
-//: Correct way to add dates that need to be Calendar aware.
+//: Correct way to add dates that need to be Calendar aware. Use `func date(byAdding components: DateComponents, to date: Date, wrappingComponents: Bool = default) -> Date?`
 
 let calendar2 = Calendar.current
 let components2 = DateComponents(day: 1, hour: 1)
@@ -228,9 +243,13 @@ guard let date3 = calendar2.date(byAdding: components2, to: Date()) else {
 
 date3
 
+let feb28 = DateComponents(calendar: .current, month: 2, day: 28).date!
+Calendar.current.date(byAdding: DateComponents(day: 1), to: feb28)
+
 //: Finding the next occurrence of a date
 
 let components3 = DateComponents(weekday: 2) // Monday
+
 guard let nextMonday = calendar2.nextDate(after: Date(), matching: components3, matchingPolicy: .nextTime) else {
   fatalError()
 }
@@ -245,13 +264,14 @@ nextMonday
 let dayComponent = DateComponents(day: 1)
 guard let tomorrowDate = Calendar.current.date(byAdding: dayComponent, to: Date()) else { fatalError() }
 
-let tomorrow2 = Calendar.current.compare(Date(), to: tomorrowDate , toGranularity: .day)
+let tomorrowResult = Calendar.current.compare(Date(), to: tomorrowDate , toGranularity: .day)
 
-if tomorrow2 == .orderedSame {
+switch tomorrowResult {
+case .orderedSame:
   print(#line, "today and tomorrow don't differ by 1 day")
-} else if tomorrow2 == .orderedAscending {
+case .orderedAscending:
   print(#line, "tomorrow is 1 day later than today.")
-} else if tomorrow2 == .orderedDescending {
+case .orderedDescending:
   print(#line, "tomorrow is earlier by 1 day than today.")
 }
 
@@ -261,11 +281,13 @@ var components5 = DateComponents(hour: 3, minute: 10)
 
 guard let todayPlus3Hrs10Mins = Calendar.current.date(byAdding: components5, to: Date()) else { fatalError() }
 
-//: Start of Day
+//: Get start of day!
+
 var startOfDay = Calendar.current.startOfDay(for: todayPlus3Hrs10Mins)
 
 
 //: End of Previous Day (Should probably use DateComponents, see the questions).
+
 startOfDay -= 1 // subtract a second from day's beginning
 
 
@@ -282,7 +304,7 @@ Calendar.current.isDateInTomorrow(tomorrow)
 Calendar.current.isDateInYesterday(Calendar.current.startOfDay(for: Date())-1)
 
 /*:
- ✅ Above I saved my birthdate components as `birthDate` which is just the month and day. The year defaults to 1 CE. Help me set a reminder this year for that date using Calendar. Look at Calendar's documentation.
+ ✅ Above I saved my birthdate components as `july2` which is just the month and day. The year defaults to 1 CE. Help me set a reminder this year for that date using Calendar.
  */
 
 
@@ -308,7 +330,7 @@ formatter1.string(from: Date())
 
 //: iOS 10+ uses ISO8601DateFormatter for Fixed Formats which uses [ISO 8601 Standard](http://www.iso.org/iso/home/standards/iso8601). See the documentation for details.
 
-//: Convenient way to create localized date strings (user facing).
+//: Convenience API for creating localized date strings (user facing).
 // .full, .long, .medium, .short, .none
 
 DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .none)
